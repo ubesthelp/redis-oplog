@@ -9,7 +9,7 @@
 
 [Theo](https://github.com/theodorDiaconu) has done the community a great service with redis-oplog. It has become a cornerstone of any major deployment of Meteor. This clone is a major improvement for highly / infinitely scalable Meteor apps. It does have less features (e.g. no SyntheticEvent) as it is optimized for a specific use-case that the original redis-oplog failed to address. We understand we are not the target audience so are grateful for the starting point.
 
-## Problem Statement 
+## Problem Statement
 We were facing three major issues with the original redis-oplog
 
 1. We faced major issues with redis-oplog in production on AWS Elatic-Beakstalk, out-of-memory & disconnects from redis. After some research we found that redis-oplog duplicates data (2x for each observer) and re-duplicates for each new observer (even if it's the same collection and same data)
@@ -27,11 +27,11 @@ This version of redis-oplog is more streamlined:
 - During `insert`, we build the doc and send it via redis to other instances
 - During `remove`, we send the ids to be removed to other instances
 - We use secondary DB reads in our app. If you have more reads --> spin up more secondaries (Note: You don't have to use secondaries, just know that this package makes it possible)
-- Optimized data sent via redis, only what REALLY changed 
-- Added **Watchers** and **dynamic docs** (see advanced section below) 
+- Optimized data sent via redis, only what REALLY changed
+- Added **Watchers** and **dynamic docs** (see advanced section below)
 - Added internal support for `collection-hooks` when caching (see Collection-hooks section below)
 - Added a race conditions detector which queries the DB (master node) and updates its cache (read below)
- 
+
 In other words, this is not a Swiss-Army knife, it is made for a very specific purpose: **scalable read-intensive real-time application**
 
 ## Results
@@ -55,10 +55,10 @@ meteor add disable-oplog
 In your `<root>/packages` folder
 ```bash
 git clone https://github.com/ramezrafla/redis-oplog.git
-meteor add zegenie:redis-oplog
+meteor add ubesthelp:redis-oplog
 ```
 
-**Important**: Make sure `zegenie:redis-oplog` is at the top of your `.meteor/packages` file
+**Important**: Make sure `ubesthelp:redis-oplog` is at the top of your `.meteor/packages` file
 
 Configure it via Meteor settings:
 
@@ -85,7 +85,7 @@ Configure it via Meteor settings:
     "cacheTimeout": 30*60*1000, // 30 mins -- Cache timeout, any data not accessed within that time is removed [READ BELOW BEFORE CHANGING]
     "cacheTimer": 5*60*1000, // 5 mins -- Time interval to check the cache for timeouts i.e. the granularity of cacheTimeout [READ BELOW BEFORE CHANGING]
     "secondaryReads": null, // Are you reading from secondary DB nodes
-    "raceDetectionDelay": 1000, // How long until all mongo nodes are assumed to have been 
+    "raceDetectionDelay": 1000, // How long until all mongo nodes are assumed to have been
     "raceDetection": true, // set to null to automate this (see Race Conditions Detector below)
     "debug": false, // Will show timestamp and activity of redis-oplog
   }
@@ -103,7 +103,7 @@ meteor run --settings settings.json
 - `cacheTimeout` (ms) is the max time a document can be unaccessed (if it is not part of a sub) before it is deleted - default 30 minutes
 - `cacheTimer` (ms) sets the delay of the `setTimeout` timer that checks cache documents' last access delay vs `cacheTimeout` - default 5 minutes
 
-In other words, your worst-case delay before clearing a document (assuming it is not part of a subscription) is `cacheTimeout + cacheTimer`. Don't set `cacheTimer` too low so not to overload your server with frequent checks, set it too high and you overload your memory. 
+In other words, your worst-case delay before clearing a document (assuming it is not part of a subscription) is `cacheTimeout + cacheTimer`. Don't set `cacheTimer` too low so not to overload your server with frequent checks, set it too high and you overload your memory.
 
 > Once a cached document is no longer part of a subscription, it will be cleared at the next cleanup cycle if it has not been accessed within `cacheTimeout` delay
 
@@ -111,7 +111,7 @@ Each project is different, so watch your memory usage to make sure your `cacheTi
 
 ## Secondary Reads
 
-If you don't set `secondaryReads` to a Boolean value (`true`/`false`) we parse your `MONGO_URL`. 
+If you don't set `secondaryReads` to a Boolean value (`true`/`false`) we parse your `MONGO_URL`.
 
 This functionality affects two things:
 1. Forces default strategy for limits (see below)
@@ -138,7 +138,7 @@ When an `$unset` update is made, we send the fields to be cleared via Redis to t
 
 ## Setup & Basic Usage
 
-**Notes:** 
+**Notes:**
 1. All setup is done server-side only, the following methods are not exposed client-side (nor should they be)
 2. Please review the API section (as well as the Important Notes section) below
 
@@ -222,13 +222,13 @@ A user logs in with different clients (in our case the webapp and a Chrome exten
 
 ```
 // we are only using dispatchInsert in the example below ... but you get the picture
-import { 
-  addToWatch, 
-  removeFromWatch, 
-  dispatchUpdate, 
-  dispatchInsert, 
-  dispatchRemove 
-} from 'meteor/zegenie:redis-oplog'
+import {
+  addToWatch,
+  removeFromWatch,
+  dispatchUpdate,
+  dispatchInsert,
+  dispatchRemove
+} from 'meteor/ubesthelp:redis-oplog'
 
 const collection = new Mongo.Collection('messages')
 
@@ -292,11 +292,11 @@ This will run the first query from the DB with the limit and sort (and get `n` d
 ## Important Notes - MUST READ
 
 - To make sure it is compatible with other packages which extend the `Mongo.Collection` methods, make sure you go to `.meteor/packages`
-and put `zegenie:redis-oplog` as the first option.
+and put `ubesthelp:redis-oplog` as the first option.
 - RedisOplog does not work with _insecure_ package, a warning is issued.
 - Updates with **positional selectors** are done directly on the DB for now until this [PR](https://github.com/meteor/meteor/pull/9721) is pulled in. Just keep this in mind in terms of your db hits.
 - This package **does not support ordered** observers. You **cannot** use `addedBefore`, `changedBefore` etc. This behavior is unlikely to change as it requires quite a bit of work and is not useful for the original developer. Frankly, you should use an `order` field in your doc and order at run-time / on the client.
-- If you have **large documents**, caching could result in memory issues as we store the full document in the cache (for performance reasons, so we don't start matching missing fields etc. for the rare use case). You may need to tweak `cacheTimeout`. In such a use case I recommend you have a separate collection for these big fields and prevent caching on it or have shorter timeout. 
+- If you have **large documents**, caching could result in memory issues as we store the full document in the cache (for performance reasons, so we don't start matching missing fields etc. for the rare use case). You may need to tweak `cacheTimeout`. In such a use case I recommend you have a separate collection for these big fields and prevent caching on it or have shorter timeout.
 
 ## OplogToRedis
 
@@ -323,4 +323,3 @@ Everywhere else, **major code cleanups** and removal of unused helpers in variou
 
 This project exists thanks to all the people who contributed (to the original redis-oplog).
 <a href="graphs/contributors"><img src="https://opencollective.com/redis-oplog/contributors.svg?width=890" /></a>
-
