@@ -1,6 +1,6 @@
 // eslint-disable-next-line
 Package.describe({
-  name: 'zegenie:redis-oplog',
+  name: 'ubesthelp:redis-oplog',
   version: '2.0.16',
   // Brief, one-line summary of the package.
   summary: "Replacement for Meteor's MongoDB oplog implementation",
@@ -38,7 +38,7 @@ Package.onUse(function(api) {
 
 // eslint-disable-next-line
 Package.onTest(function(api) {
-  api.use('zegenie:redis-oplog')
+  api.use('ubesthelp:redis-oplog')
 
   // extensions
   api.use('aldeed:collection2@3.0.0')
